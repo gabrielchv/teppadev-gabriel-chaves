@@ -15,7 +15,7 @@ admin.initializeApp({
 });
 const db = admin.firestore();
 
-// Express
+// Express config
 const app = express();
 app.use(express.static(path.join(__dirname, "../frontend/build")));
 app.use(bodyParser.json());
