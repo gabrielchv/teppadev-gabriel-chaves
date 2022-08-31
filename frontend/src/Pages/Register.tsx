@@ -1,35 +1,53 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-function Login() {
+function Register() {
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [redirect, setRedirect] = React.useState(false);
+  const [confirmPassword, setConfirmPassword] = React.useState("");
 
-  const btn = React.useRef<HTMLButtonElement>(null);
+  const btnRef = React.useRef<HTMLButtonElement>(null);
   const loginStatus = React.useRef<HTMLParagraphElement>(null);
+  const confirmPasswordRef = React.useRef<HTMLInputElement>(null);
 
   let navigate = useNavigate();
 
   function setValue(event: React.ChangeEvent<HTMLInputElement>) {
     if (event.target.name == "username") setUsername(event.target.value);
     if (event.target.name == "password") setPassword(event.target.value);
+    if (event.target.name == "confirmPassword")
+      setConfirmPassword(event.target.value);
   }
 
   React.useEffect(() => {
-    // Mudar o site para login
-    if (redirect) return navigate("/");
-  }, [redirect]);
+    // Habilitar ou desabilitar botão
+    if (
+      username != "" &&
+      password != "" &&
+      confirmPassword != "" &&
+      password == confirmPassword
+    )
+      btnRef?.current?.classList.remove("disabled");
+    else btnRef?.current?.classList.add("disabled");
+  }, [username, password, confirmPassword]);
 
   React.useEffect(() => {
-    // Habilitar ou desabilitar botão
-    if (username != "" && password != "")
-      btn.current?.classList.remove("disabled");
-    else btn.current?.classList.add("disabled");
-  }, [username, password]);
+    // Permitir a confirmação da senha
+    if (confirmPassword != password) {
+      confirmPasswordRef.current?.classList.add("is-invalid");
+    } else {
+      confirmPasswordRef.current?.classList.remove("is-invalid");
+    }
+  }, [password, confirmPassword]);
 
-  async function loginUser() {
-    const response = await fetch("/api/loginuser", {
+  React.useEffect(() => {
+    // Mudar o site para login
+    if (redirect) return navigate("/entrar");
+  }, [redirect]);
+
+  async function createUser() {
+    const response = await fetch("/api/registeruser", {
       method: "POST",
       body: JSON.stringify({
         username: username,
@@ -40,6 +58,7 @@ function Login() {
       },
     });
     const data = await response.json();
+    console.log(data);
     setRedirect(data.status);
     if (!data.status) loginStatus?.current?.classList.remove("invisible");
     else loginStatus?.current?.classList.add("invisible");
@@ -63,16 +82,28 @@ function Login() {
             className="form-control"
             placeholder="Senha"
           />
+          <input
+            ref={confirmPasswordRef}
+            name="confirmPassword"
+            onChange={setValue}
+            type="password"
+            className="form-control"
+            placeholder="Digite a senha novamente"
+            aria-describedby="checarSenha"
+          />
+          <div className="invalid-feedback" id="checarSenha">
+            As senhas não correspondem
+          </div>
           <button
-            onClick={loginUser}
-            ref={btn}
+            onClick={createUser}
+            ref={btnRef}
             className="btn btn-primary btn-md btn-block"
           >
-            Entrar
+            Cadastrar
           </button>
-          <Link to="/cadastrar">Cadastrar</Link>
+          <Link to="/entrar">Entrar</Link>
           <p ref={loginStatus} className="invisible text-danger">
-            Usuário ou senha incorreta
+            Este usuário já existe
           </p>
         </div>
       </div>
@@ -80,4 +111,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Register;

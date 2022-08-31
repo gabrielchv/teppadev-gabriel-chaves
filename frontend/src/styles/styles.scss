@@ -1,5 +1,14 @@
-.LoginPage {
-  width: 100vw;
-  .loginBox {
+.MainPage {
+  .colorsDiv {
+    .colorSquare {
+      border-radius: 50%;
+      border-width: 0.1rem;
+      border-color: aqua;
+      width: 1rem;
+      height: 1rem;
+    }
+    .borderSolid {
+      border-style: solid;
+    }
   }
 }

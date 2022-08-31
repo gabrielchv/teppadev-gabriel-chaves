@@ -7,7 +7,6 @@ require("dotenv").config();
 
 // Firebase
 import admin from "firebase-admin";
-
 admin.initializeApp({
   credential: admin.credential.cert(
     JSON.parse(process.env.GOOGLE_AUTH || "{}")
@@ -31,81 +30,94 @@ app.use(
 
 // Get main react project
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "frontend/dist", "index.html"));
+  res.sendFile(path.join(__dirname, "../frontend/build", "index.html"));
+});
+app.get("/entrar", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/build", "index.html"));
+});
+app.get("/cadastrar", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/build", "index.html"));
 });
 
 // Create user in db
-app.post("/api/createuser", async (req, res) => {
-  console.log(req.body);
-
+app.post("/api/registeruser", async (req, res) => {
   try {
-    const id = req.body.email;
-    const userJson = {
-      email: req.body.email,
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-    };
-    const response = db.collection("users").doc(id).set(userJson);
-    res.send(response);
-  } catch (err) {
-    res.send(err);
-  }
-});
-
-// Read all users in db
-app.get("/api/readuser/all", async (req, res) => {
-  try {
-    const usersRef = db.collection("users");
+    const usersRef = db.collection("users").doc(req.body.username);
     const response = await usersRef.get();
-    let responseArr: FirebaseFirestore.DocumentData[] = [];
-    response.forEach((doc) => {
-      responseArr.push(doc.data());
-    });
-    console.log(responseArr);
-    res.send(responseArr);
+    if (!response.data()) {
+      const userJson = {
+        username: req.body.username,
+        password: req.body.password,
+        session_id: "",
+        notes: {},
+      };
+      db.collection("users").doc(req.body.username).set(userJson);
+      console.log("Usuário criado");
+      res.send({ status: true });
+    } else {
+      console.log("Usuário não foi criado");
+      res.send({ status: false });
+    }
   } catch (err) {
-    res.send(err);
+    console.log(err);
+    res.send({ status: false });
   }
 });
 
 // Read specific user in db
-app.post("/api/readuser", async (req, res) => {
-  console.log(req.body);
+app.post("/api/loginuser", async (req, res) => {
   try {
-    const usersRef = db.collection("users").doc(req.body.email);
-    const response = await usersRef.get();
-    console.log(response.data());
-    res.send(response.data());
+    const userRef = db.collection("users").doc(req.body.username);
+    const response = await userRef.get();
+    if (response.data() == undefined) res.send({ status: false });
+    if (response.data()?.password != req.body.password)
+      res.send({ status: false });
+    if (response.data()?.password == req.body.password) {
+      // Deletar os session antigos
+      const cookieUsersRef = await db
+        .collection("users")
+        .where("session_id", "==", req.sessionID)
+        .get();
+      cookieUsersRef.forEach((doc) => {
+        db.collection("users").doc(doc.data().username).update({
+          session_id: "",
+        });
+      });
+
+      // Adicionando session no user novo
+      userRef.update({
+        session_id: req.sessionID,
+      });
+      res.send({ status: true });
+    }
   } catch (err) {
-    res.send(err);
+    console.log(err);
+    res.send({ status: false });
   }
 });
 
-// Update user FirstName and LastName
-app.post("/api/updateuser", async (req, res) => {
-  console.log(req.body);
-  try {
-    const usersRef = await db.collection("users").doc(req.body.email).update({
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-    });
-    console.log("Usuário " + req.body.email + " foi atualizado!");
-    res.send(usersRef);
-  } catch (err) {
-    res.send(err);
-  }
-});
-
-// Delete User
-app.post("/api/deleteuser", async (req, res) => {
-  console.log(req.body);
-  try {
-    const usersRef = await db.collection("users").doc(req.body.email).delete();
-    console.log("Usuário " + req.body.email + " foi deletado!");
-    res.send(usersRef);
-  } catch (err) {
-    res.send(err);
-  }
+app.post("/api/test", async (req, res) => {
+  const userRef = db.collection("users").doc("gabrielchv");
+  const response = await userRef.get();
+  userRef.update({
+    notes: {
+      0: {
+        name: "name",
+        desc: "desc",
+        type: 1,
+      },
+      1: {
+        name: "testename",
+        desc: "testedesc",
+        type: 3,
+      },
+      2: {
+        name: "fuckname",
+        desc: "fuckdesc",
+        type: 1,
+      },
+    },
+  });
 });
 
 const PORT = process.env.PORT || 3001;
