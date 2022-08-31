@@ -4,7 +4,7 @@
   "description": "teste para devs fullstack",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start": "node src/index.js",
     "dev": "ts-node-dev --respawn src/index.ts",
     "build": "tsc"
   },
