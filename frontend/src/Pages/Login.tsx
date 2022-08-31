@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import Navbar from "./../Components/Navbar";
 
 function Login() {
   const [username, setUsername] = React.useState("");
@@ -23,8 +24,7 @@ function Login() {
 
   React.useEffect(() => {
     // Habilitar ou desabilitar botão
-    if (username != "" && password != "")
-      btn.current?.classList.remove("disabled");
+    if (username != "" && password != "") btn.current?.classList.remove("disabled");
     else btn.current?.classList.add("disabled");
   }, [username, password]);
 
@@ -46,34 +46,21 @@ function Login() {
   }
 
   return (
-    <div className="container">
-      <div className="row justify-content-center">
-        <div className="loginBox mt-5 d-grid gap-1 col-xs-12 col-sm-6 col-lg-3 text-center">
-          <input
-            name="username"
-            onChange={setValue}
-            type="text"
-            className="form-control"
-            placeholder="Usuário"
-          />
-          <input
-            name="password"
-            onChange={setValue}
-            type="password"
-            className="form-control"
-            placeholder="Senha"
-          />
-          <button
-            onClick={loginUser}
-            ref={btn}
-            className="btn btn-primary btn-md btn-block"
-          >
-            Entrar
-          </button>
-          <Link to="/cadastrar">Cadastrar</Link>
-          <p ref={loginStatus} className="invisible text-danger">
-            Usuário ou senha incorreta
-          </p>
+    <div>
+      <Navbar></Navbar>
+      <div className="container">
+        <div className="row justify-content-center">
+          <div className="loginBox mt-5 d-grid gap-1 col-xs-12 col-sm-6 col-lg-3 text-center">
+            <input name="username" onChange={setValue} type="text" className="form-control" placeholder="Usuário" />
+            <input name="password" onChange={setValue} type="password" className="form-control" placeholder="Senha" />
+            <button onClick={loginUser} ref={btn} className="btn btn-primary btn-md btn-block">
+              Entrar
+            </button>
+            <Link to="/cadastrar">Cadastrar</Link>
+            <p ref={loginStatus} className="invisible text-danger">
+              Usuário ou senha incorreta
+            </p>
+          </div>
         </div>
       </div>
     </div>

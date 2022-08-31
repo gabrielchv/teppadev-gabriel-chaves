@@ -8,9 +8,7 @@ require("dotenv").config();
 // Firebase
 import admin from "firebase-admin";
 admin.initializeApp({
-  credential: admin.credential.cert(
-    JSON.parse(process.env.GOOGLE_AUTH || "{}")
-  ),
+  credential: admin.credential.cert(JSON.parse(process.env.GOOGLE_AUTH || "{}")),
 });
 const db = admin.firestore();
 
@@ -49,7 +47,7 @@ app.post("/api/registeruser", async (req, res) => {
         username: req.body.username,
         password: req.body.password,
         session_id: "",
-        notes: {},
+        notes: [],
       };
       db.collection("users").doc(req.body.username).set(userJson);
       console.log("Usuário criado");
@@ -70,14 +68,10 @@ app.post("/api/loginuser", async (req, res) => {
     const userRef = db.collection("users").doc(req.body.username);
     const response = await userRef.get();
     if (response.data() == undefined) res.send({ status: false });
-    if (response.data()?.password != req.body.password)
-      res.send({ status: false });
+    if (response.data()?.password != req.body.password) res.send({ status: false });
     if (response.data()?.password == req.body.password) {
       // Deletar os session antigos
-      const cookieUsersRef = await db
-        .collection("users")
-        .where("session_id", "==", req.sessionID)
-        .get();
+      const cookieUsersRef = await db.collection("users").where("session_id", "==", req.sessionID).get();
       cookieUsersRef.forEach((doc) => {
         db.collection("users").doc(doc.data().username).update({
           session_id: "",
@@ -96,28 +90,56 @@ app.post("/api/loginuser", async (req, res) => {
   }
 });
 
-app.post("/api/test", async (req, res) => {
-  const userRef = db.collection("users").doc("gabrielchv");
-  const response = await userRef.get();
-  userRef.update({
-    notes: {
-      0: {
-        name: "name",
-        desc: "desc",
-        type: 1,
-      },
-      1: {
-        name: "testename",
-        desc: "testedesc",
-        type: 3,
-      },
-      2: {
-        name: "fuckname",
-        desc: "fuckdesc",
-        type: 1,
-      },
-    },
-  });
+app.get("/api/getnotes", async (req, res) => {
+  console.log(req.sessionID);
+  const cookieUsersRef = await db.collection("users").where("session_id", "==", req.sessionID).get();
+  if (cookieUsersRef.size > 0) {
+    try {
+      let username = "";
+      cookieUsersRef.forEach((doc) => {
+        username = doc.data().username;
+      });
+      const userRef = db.collection("users").doc(username);
+      const response = await userRef.get();
+      let notes: [] = [];
+      if (response.data()) {
+        notes = response.data()?.notes;
+      }
+      res.send({ status: true, notes: notes });
+    } catch (err) {
+      console.log(err);
+      res.send({ status: false });
+    }
+  } else {
+    res.send({ status: false });
+  }
+});
+
+app.post("/api/registernotes", async (req, res) => {
+  const cookieUsersRef = await db.collection("users").where("session_id", "==", req.sessionID).get();
+  if (cookieUsersRef.size > 0) {
+    try {
+      let username = "";
+      cookieUsersRef.forEach((doc) => {
+        username = doc.data().username;
+      });
+      const userRef = db.collection("users").doc(username);
+      console.log(username);
+      let tempNotes: { title: string; description: string; color: string; id: number }[] = [];
+      req.body.notes.forEach((note: { title: string; description: string; color: string; id: number }) => {
+        tempNotes.push({ title: note.title, description: note.description, color: note.color, id: note.id });
+      });
+      userRef.update({
+        notes: tempNotes,
+      });
+      res.send({ status: true });
+    } catch (err) {
+      console.log(err);
+      res.send({ status: false });
+    }
+  } else {
+    res.send({ status: false });
+  }
 });
 
 const PORT = process.env.PORT || 3001;
